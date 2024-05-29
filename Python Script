@@ -1,0 +1,69 @@
+# Import the regular expressions module for pattern matching
+import re
+# Import the os module for interacting with the operating system and file paths
+import os
+
+# Define patterns for emails and URLs
+email_pattern = re.compile(b'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}')
+url_pattern = re.compile(b'\w+:\/\/[\w@][\w.:@]+\/?[\w.\.?=%&=\-@$,]*')
+
+# Function to find patterns in file chunks
+def find_patterns_in_chunks(file_path, pattern):
+    # Define the chunk size for reading the file
+    chunk_size = 1024 * 1024  # 1MB
+    # Initialize a set to store found items
+    found_items = set()
+    # Open the file in binary read mode
+    with open(file_path, 'rb') as file:
+        # Loop to read the file in chunks
+        while True:
+            # Read a chunk of the file
+            chunk = file.read(chunk_size)
+            # Break the loop if the chunk is empty (end of file)
+            if not chunk:
+                break
+            # Find all matches for the pattern in the current chunk
+            for item in pattern.findall(chunk):
+                # Decode each found item from bytes to string and add to the set
+                found_items.add(item.decode('utf-8'))
+    # Return the set of found items
+    return found_items
+
+# Function to write found items to a file
+def write_to_file(file_path, items):
+    # Open the specified file path in write mode
+    with open(file_path, 'w') as f:
+        # Iterate over sorted items and write each to the file
+        for item in sorted(items):
+            f.write(item + '\n')
+
+# Main function to orchestrate the pattern finding and file writing
+def main():
+    # Specify the path to the memory dump file
+    memory_dump_path = r'C:\Users\james\mem.raw'
+    # Specify output file paths for emails and URLs
+    output_emails_path = "found_emails.txt"
+    output_urls_path = "found_urls.txt"
+    # Try block to handle potential errors
+    try:
+        # Find emails and URLs in the memory dump using the defined function
+        found_emails = find_patterns_in_chunks(memory_dump_path, email_pattern)
+        found_urls = find_patterns_in_chunks(memory_dump_path, url_pattern)
+        # Write found emails to an output file
+        write_to_file(output_emails_path, found_emails)
+        # Write found URLs to an output file
+        write_to_file(output_urls_path, found_urls)
+        # Print a message indicating the operation's success
+        print(f"Found emails and URLs have been written to '{output_emails_path}' and '{output_urls_path}' respectively.")
+    # Catch and specifically handle the FileNotFoundError
+    except FileNotFoundError:
+        # Print an error message if the specified file is not found
+        print(f"Error: The file {memory_dump_path} was not found.")
+    # Catch and handle any other type of exception
+    except Exception as e:
+        # Print a generic error message for any unexpected errors
+        print(f"An unexpected error occurred: {e}")
+
+# Check if the script is run as the main program
+if __name__ == "__main__":
+    main()
